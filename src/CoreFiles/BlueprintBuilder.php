@@ -123,6 +123,18 @@ class BlueprintBuilder
             return "fkReference";
         }
 
+
+        if($this->validateFunction($functionName,["modify","change"]))
+        {
+            return "modifier";
+        }
+        
+
+        if($this->validateFunction($functionName,["add"]))
+        {
+            return "add";
+        }
+
     }
 
        protected static function params(string $name, string $action, array $array): void
@@ -164,7 +176,7 @@ class BlueprintBuilder
 
      public function id($id = "id")
     {
-        return $this->int($id)->ai();
+        return $this->int($id)->notNullable()->ai();
     }
 
     public function string($name, $value = 100)
@@ -715,23 +727,25 @@ class BlueprintBuilder
          $this->sendRequest(self::$fkName,$type,$actions);
     }
 
-    // public function add()
-    // {
+    public function add()
+    {
     
-    //         $name = $this->name;
-    //         $actions = [
-    //             "modifier"=>true,
-    //             "name"=>$this->name,
-    //             "type"=>"add",
-    //             "command"=>" ADD "];
-    //         $this->processRequest($this->name,"modifier",$actions);
-    //     }
-    //     else
-    //     {
-    //         // self::unsetParams($this->name);
-    //         $this->modify();
-    //     }
-    // }
+        if(self::$validator->hasColumn($this->name) === false)
+        {
+            $name = $this->name;
+            $actions = [
+                "modifier"=>true,
+                "name"=>$this->name,
+                "type"=>"add",
+                "command"=>" ADD "];
+            $this->processRequest($this->name,"modifier",$actions);
+        }
+        else
+        {
+            // self::unsetParams($this->name);
+            $this->modify();
+        }
+    }
 
     // End Modifiers
 
