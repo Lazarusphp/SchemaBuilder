@@ -4,6 +4,7 @@ namespace Lazarusphp\SchemaBuilder;
 use LazarusPhp\LazarusBridge\SchemaValidator;
 use ReflectionClass;
 use LazarusPhp\SchemaBuilder\Interfaces\SchemaLoaderInterface;
+use LazarusPhp\SchemaBuilder\Schema;
 
 class SchemaLoader
 {
@@ -132,13 +133,14 @@ class SchemaLoader
     // Set Migrate Table
      private function migrateTable($method)
     {
-        
+
         if ($this->validator->hasTable()) {
             if (method_exists($this->schemaLoaderInterface, $method)) {
 
+                $schema = new Schema();
                 // echo "Method Exists";
                 if ($this->hasbody($this->schemaLoaderInterface, $method)) {
-                    $this->schemaLoaderInterface->up();
+                    $this->schemaLoaderInterface->up($schema);
                 } 
                 else {
                     SchemaErrors::generate("Cannot create table ".TABLE, ["reason" => "$method code has not Body in it"]);

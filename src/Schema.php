@@ -1,6 +1,7 @@
 <?php
 namespace LazarusPhp\SchemaBuilder;
 use LazarusPhp\LazarusBridge\DbQueries;
+use LazarusPhp\LazarusBridge\SchemaValidator;
 use LazarusPhp\SchemaBuilder\Blueprint;
 class Schema extends DbQueries
 {
@@ -9,9 +10,11 @@ class Schema extends DbQueries
     
 
     // 
-    public static function create(callable $blueprint)
+    public function create(callable $blueprint)
     {
-        $sql = "CREATE TABLE IF EXISTS (";
+        $validator = new SchemaValidator();
+        if($validator->hasTable(TABLE) === false){
+        $sql = "CREATE TABLE IF NOT EXISTS ".TABLE." (";
     if (is_callable($blueprint)) {
             $class = new Blueprint();
             $blueprint($class);
@@ -20,19 +23,35 @@ class Schema extends DbQueries
 
         $sql .= ")";
 
-        $this->save($save);
+        echo $sql;
+        $this->save($sql);
+        }
     }
 
-    public static function alter(callable $blueprint)
+    public function alter(string | callable $blueprint)
     {
-        $sql = "ALTER TABLE ".TABLE." "
+        $validator = new SchemaValidator();
+        if($validator->hasTable(TABLE) === true)
+        {
+        $sql = "ALTER TABLE ".TABLE." ";
+        if(is_string(($blueprint)))
+        {
+            $class = new Blueprint();
+            $blueprint($class);
+            $class->build;
+        }
         if(is_callable($blueprint))
         {
             $class = new Blueprint();
             $blueprint($class);
-            $class->build();
+            $sql .= $class->build();
+        }
+
+        echo $sql;
+        $this->save($sql);
         }
     }
+
 
 
 }
