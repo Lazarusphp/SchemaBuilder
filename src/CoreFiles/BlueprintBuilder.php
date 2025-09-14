@@ -1,6 +1,7 @@
 <?php
 namespace LazarusPhp\SchemaBuilder\CoreFiles;
 
+use App\System\Core\Functions;
 use LazarusPhp\LazarusBridge\SchemaValidator;
 
 class BlueprintBuilder
@@ -168,10 +169,7 @@ class BlueprintBuilder
         $this->name = $name;
         self::params($this->name, $action, $array);
     }
-
-
-     
-
+    
     // Datatypes
 
      public function id($id = "id")
@@ -351,7 +349,6 @@ class BlueprintBuilder
         if (empty($value)) {
             echo "Value cannot be empty";
         } else {
-            if ($this->processDefaults()) {
             //    Check if value is a string replace Quotes
                 if (is_string($value)) {
                     $value = "'" . str_replace("'", "''", $value) . "'";
@@ -362,7 +359,7 @@ class BlueprintBuilder
                 $actions = ["function"=>$function,"command"=>"DEFAULT $value"];
                 $type = $this->getType($function);
                 $this->sendRequest($this->name, $type, $actions);
-            }
+            
         }
 
         return $this;
@@ -446,52 +443,24 @@ class BlueprintBuilder
 
   public function after($name)
   {
-    // $table = TABLE;
-    // $validator = new SchemaValidator($table);
-    // if ($validator->hasTable() === false) {
-    //   if (!$validator->validField("column_name", $name)) {
-    //     SchemaErrors::generate("Cannot Adjust Position", ["reason" => "Table $table doesnt exist"]);
-    //     return false;
-    //   } elseif ($validator->hasTable($table)) {
-    //     if (!$validator->validField("column_name", $name)) {
-    //       SchemaErrors::generate("Cannot Adjust Position", ["reason" => "Table $table doesnt exist"]);
-    //       return false;
-    //     }
-    //   }
-    // } else {
-
-    // $actions = ["function"=>$function,"command" => " AFTER "];
-    // $type = $this->getType($function);
-    // $this->sendRequest($name, $type, $actions);
-    //   return $this;
-    // }
+    if (self::$validator->hasTable() === false) {
+      if (self::$validator->hasColumn($name) === false) {
+        // SchemaErrors::generate("Cannot Adjust Position", ["reason" => "Table $table doesnt exist"]);
+        return false;
+      } elseif (self::$validator->hasTable()) {
+        if (self::$validator->hasColumn($name) === false) {
+        //   SchemaErrors::generate("Cannot Adjust Position", ["reason" => "Column $name doesnt exist"]);
+          return false;
+        }
+      }
+    } else {
+    $function  = __FUNCTION__;
+    $actions = ["function"=>$function,"command" => " AFTER $name "];
+    $type = $this->getType($function);
+    $this->sendRequest($this->name, $type, $actions);
+      return $this;
+    }
   }
-
-
-  public function first()
-  {
-    // $table = TABLE;
-    // $validator = new SchemaValidator($table);
-    // if ($validator->hasTable($table) === false) {
-    //   if (!$validator->validField("column_name", $name)) {
-    //     SchemaErrors::generate("Cannot Adjust Position", ["reason" => "Table $table doesnt exist"]);
-    //     return false;
-    //   } elseif ($validator->hasTable($table)) {
-    //     if (!$validator->validField("column_name", $name)) {
-    //       SchemaErrors::generate("Cannot Adjust Position", ["reason" => "Table $table doesnt exist"]);
-    //       return false;
-    //     }
-    //   }
-    // } else {
-    
-    // $function = __FUNCTION__;
-    // $actions = ["function"=>$function,"command" => " FIRST "];
-    // $type = $this->getType($function);
-    // $this->sendRequest($name, $type, $actions);
-    // }
-    // return $this;
-  }
-
     // End Positions
 
     // Indexes Primary keys and Foreign Keys
@@ -517,6 +486,8 @@ class BlueprintBuilder
     // Changed name from primaryKey to primary
     public function primary()
     {
+        // Will need to look at Dropping Primary here.
+        // this will also require changing and dropping AutoIncrement
         $function = __FUNCTION__;
         $id = ($this->name === "id") ? "id" : $this->name;
         $actions = ["command" => " PRIMARY KEY ($id) "];
