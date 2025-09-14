@@ -16,7 +16,7 @@ class Schema extends DbQueries
         if($validator->hasTable(TABLE) === false){
         $sql = "CREATE TABLE IF NOT EXISTS ".TABLE." (";
     if (is_callable($blueprint)) {
-            $class = new Blueprint();
+            $class = new Blueprint("create");
             $blueprint($class);
              $sql .= $class->build();
         }
@@ -34,12 +34,6 @@ class Schema extends DbQueries
         if($validator->hasTable(TABLE) === true)
         {
         $sql = "ALTER TABLE ".TABLE." ";
-        if(is_string(($blueprint)))
-        {
-            $class = new Blueprint();
-            $blueprint($class);
-            $class->build;
-        }
         if(is_callable($blueprint))
         {
             $class = new Blueprint();
