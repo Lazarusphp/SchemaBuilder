@@ -1,39 +1,34 @@
 <?php
+
 namespace LazarusPhp\SchemaBuilder;
+
 use LazarusPhp\LazarusBridge\SchemaValidator;
 use LazarusPhp\LazarusDb\SchemaBuilder\SchemaErrors;
 
 use LazarusPhp\SchemaBuilder\CoreFiles\BlueprintBuilder;
 
-class Blueprint Extends BlueprintBuilder
-{   
-    
+class Blueprint extends BlueprintBuilder
+{
+
     public static function getParams(...$args)
     {
-   
+
         if (isset(self::$params[TABLE])) {
-            if(count($args) === 0){
-            return self::$params[TABLE];
+            if (count($args) === 0) {
+                return self::$params[TABLE];
+            } else {
+                $table = array_merge(self::$params[TABLE], $args);
+                return $table;
             }
-            else
-            {
-                 $table = array_merge(self::$params[TABLE],$args);
-                 return $table;
-            } 
-        }
-        else {
+        } else {
         }
     }
 
 
-    public function __construct()
+    public function __construct($method)
     {
+        self::$method = $method;
         parent::__construct();
-
-        if(self::$validator->hasTable(TABLE) === false)
-        {
-            echo "Cannot load table ". TABLE;
-        }
     }
 
 
@@ -43,7 +38,7 @@ class Blueprint Extends BlueprintBuilder
      * @static
      *  method is designed to set a method using a  passed parameter and then ouptut when no param is passed
      * */
-    public static function method(string $method = "")
+    public function method(string $method = "")
     {
         if (empty($method)) {
             if (isset(self::$method[TABLE])) {
@@ -55,12 +50,11 @@ class Blueprint Extends BlueprintBuilder
             }
             self::$method[TABLE] = $method;
         }
-    }    
+    }
 
     protected static function unsetParams($name)
     {
-        if(isset(self::$params[TABLE][$name]))
-        {
+        if (isset(self::$params[TABLE][$name])) {
             unset(self::$params[TABLE][$name]);
         }
         return self::$params[TABLE];
@@ -70,8 +64,7 @@ class Blueprint Extends BlueprintBuilder
     private static function passDatatype($props)
     {
         $datatype = isset($props["datatype"]) ? $props["datatype"] : null;
-        if($datatype)
-        {
+        if ($datatype) {
             return $datatype["command"];
         }
     }
@@ -85,11 +78,9 @@ class Blueprint Extends BlueprintBuilder
 
     private static function passModifier($props)
     {
-        if(isset($props["modifier"]))
-        {
-            if(isset($props["modifier"]["command"]))
-            {
-                return $props["modifier"]["command"]; 
+        if (isset($props["modifier"])) {
+            if (isset($props["modifier"]["command"])) {
+                return $props["modifier"]["command"];
             }
         }
     }
@@ -115,8 +106,10 @@ class Blueprint Extends BlueprintBuilder
             $exploded = explode("|", $required);
 
             if (!in_array($props["datatype"]["function"], $exploded)) {
-                SchemaErrors::generate("Cannot Pass Attributes",["Reason"=>"Invalid Datatype used",
-                "Supported Types"=>$exploded]);
+                SchemaErrors::generate("Cannot Pass Attributes", [
+                    "Reason" => "Invalid Datatype used",
+                    "Supported Types" => $exploded
+                ]);
                 return false;
             } else {
                 return $props["attributes"]["command"];
@@ -145,41 +138,33 @@ class Blueprint Extends BlueprintBuilder
         $references = [];
         $commands = [];
         $params = self::getParams();
-    
-        
 
-        foreach($params as $table => $properties)
-        {
-            if(isset($properties["indexes"]))
-            {
-             $props = $properties["indexes"];
-                foreach ($properties["indexes"] as $ref => $data)
-                {
-                   
+
+
+        foreach ($params as $table => $properties) {
+            if (isset($properties["indexes"])) {
+                $props = $properties["indexes"];
+                foreach ($properties["indexes"] as $ref => $data) {
                     $index = self::$validator->hasIndexes($data["name"]);
-                    if(self::method() === "alter" && $index)
-                    {
+                    if (self::$method === "alter" && $index === true) {
                         self::$query["indexes"][] = " DROP INDEX {$data["name"]}";
                     }
-                    
+
                     if (is_array($data["value"])) {
-                    $idxValues = implode(", ", $data["value"]);
-                    } 
-                    else {
+                        $idxValues = implode(", ", $data["value"]);
+                    } else {
                         $idxValues = $data["value"];
                     }
 
-                        $references[$ref][] = $idxValues;
-                        
-                        $commands[$ref] =  $data["command"];
-                    }
+                    $references[$ref][] = $idxValues;
 
+                    $commands[$ref] =  $data["command"];
+                }
             }
         }
 
-        foreach($commands as $idxName => $command)
-        {
-            $command = (self::method() === "alter") ? " ADD $command" : $command;
+        foreach ($commands as $idxName => $command) {
+            $command = (self::$method === "alter") ? " ADD $command" : $command;
             $columnList = implode(', ', array_unique($references[$idxName]));
             $queries = "$command $idxName($columnList)";
             self::$query["indexes"][] = $queries;
@@ -188,41 +173,34 @@ class Blueprint Extends BlueprintBuilder
 
     private static function passUniques()
     {
-          $references = [];
+        $references = [];
         $commands = [];
         $params = self::getParams();
 
-        foreach($params as $table => $properties)
-        {
-            if(isset($properties["uniques"]))
-            {
-             $props = $properties["uniques"];
-                foreach ($properties["uniques"] as $ref => $data)
-                {
-                
-                    if(self::method() === "alter" && self::$validator->hasIndexes($data["name"]))
-                    {
+        foreach ($params as $table => $properties) {
+            if (isset($properties["uniques"])) {
+                $props = $properties["uniques"];
+                foreach ($properties["uniques"] as $ref => $data) {
+
+                    if (self::$method === "alter" && self::$validator->hasIndexes($data["name"] === true)) {
                         self::$query["uniques"][] = " DROP INDEX {$data["name"]}";
                     }
-                    
+
                     if (is_array($data["value"])) {
-                    $idxValues = implode(", ",$data["value"]);
-                    } 
-                    else {
+                        $idxValues = implode(", ", $data["value"]);
+                    } else {
                         $idxValues = $data["value"];
                     }
 
-                        $references[$ref][] = $idxValues;
-                        
-                        $commands[$ref] =  $data["command"];
-                    }
+                    $references[$ref][] = $idxValues;
 
+                    $commands[$ref] =  $data["command"];
+                }
             }
         }
 
-        foreach($commands as $idxName => $command)
-        {
-            $command = (self::method() === "alter") ? " ADD $command" : $command;
+        foreach ($commands as $idxName => $command) {
+            $command = (self::$method === "alter") ? " ADD $command" : $command;
             $columnList = implode(', ', array_unique($references[$idxName]));
 
             $queries = "$command $idxName($columnList)";
@@ -232,8 +210,8 @@ class Blueprint Extends BlueprintBuilder
 
     public static function passfk()
     {
-        
-        $reference = [];        
+
+        $reference = [];
         $params = array_filter(self::getParams(), function ($properties) {
             return isset($properties["fk"])
                 && isset($properties["fkReference"])
@@ -252,17 +230,17 @@ class Blueprint Extends BlueprintBuilder
             $onDelete = $properties["fkDelete"]["command"] ?? "restrict";
             $onUpdate = $properties["fkUpdate"]["command"] ?? "restrict";
 
-            (!in_array($table,$reference)) ? $reference[$index]["table"] = $table : "";
-            (!in_array($column,$reference)) ? $reference[$index]["column"] = $column : "";
-            (!in_array($constraint,$reference)) ? $reference[$index]["constraint"] = $constraint: "" ;
-            (!in_array($refTable,$reference)) ? $reference[$index]["refTable"] = $refTable : "";
-            (!in_array($table,$reference)) ? $reference[$index]["refColumn"] = $refColumn : "";
-            (!in_array($onDelete,$reference)) ? $reference[$index]["onDelete"] = $onDelete : "";
-            (!in_array($onUpdate,$reference)) ? $reference[$index]["onUpdate"] = $onUpdate : "";
+            (!in_array($table, $reference)) ? $reference[$index]["table"] = $table : "";
+            (!in_array($column, $reference)) ? $reference[$index]["column"] = $column : "";
+            (!in_array($constraint, $reference)) ? $reference[$index]["constraint"] = $constraint : "";
+            (!in_array($refTable, $reference)) ? $reference[$index]["refTable"] = $refTable : "";
+            (!in_array($table, $reference)) ? $reference[$index]["refColumn"] = $refColumn : "";
+            (!in_array($onDelete, $reference)) ? $reference[$index]["onDelete"] = $onDelete : "";
+            (!in_array($onUpdate, $reference)) ? $reference[$index]["onUpdate"] = $onUpdate : "";
         }
 
-        $add = (self::method() === "alter") ? " ADD " : "";
-       
+        $add = (self::$method === "alter") ? " ADD " : "";
+
         // Generate New Foreign Key.
         $foreignKey = [];
         if (self::$validator->hasForeignKey() === true) {
@@ -277,23 +255,20 @@ class Blueprint Extends BlueprintBuilder
         }
 
 
-        foreach($reference as $index => $command)
-        {
+        foreach ($reference as $index => $command) {
 
             // Add |Foreign key validation here per id
-            if(!isset($cnactive[$index]))
-            {
+            if (!isset($cnactive[$index])) {
                 $constraintStr = ($constraint === true) ? "CONSTRAINT {$command["column"]} " : "";
-            $foreignKey[$index] =
-                "$add $constraintStr FOREIGN KEY ({$command["column"]}) REFERENCES {$command["refTable"]}"
-                . "({$command["refColumn"]})"
-                . " ON UPDATE {$command["onUpdate"]} ON DELETE {$command["onDelete"]}";
+                $foreignKey[$index] =
+                    "$add $constraintStr FOREIGN KEY ({$command["column"]}) REFERENCES {$command["refTable"]}"
+                    . "({$command["refColumn"]})"
+                    . " ON UPDATE {$command["onUpdate"]} ON DELETE {$command["onDelete"]}";
             }
-      }
+        }
 
-        
-        foreach($foreignKey as $idxName => $command)
-        {
+
+        foreach ($foreignKey as $idxName => $command) {
             self::$query["fk"][] = $command;
         }
         // Functions::dd(self::$query["fk"]);
@@ -312,7 +287,7 @@ class Blueprint Extends BlueprintBuilder
 
         foreach ($params as $name => $props) {
             // Continue the script
-            
+
             $datatype = self::passDatatype($props);
             $modifier = self::passModifier($props);
             $ai = self::passAi($props);
@@ -322,7 +297,6 @@ class Blueprint Extends BlueprintBuilder
             $position = self::passPosition($props);
             self::passPrimary($props);
             $columns[] = trim("$modifier $datatype $attributes $null $default $ai $position");
-            
         }
 
         self::passfk();
@@ -332,19 +306,19 @@ class Blueprint Extends BlueprintBuilder
         self::$query["datatypes"] = $columns;
 
         $allParts = array_merge(
-    self::$query["fkDrop"] ?? [],
-    self::$query['datatypes'] ?? [],
-    self::$query['primary'] ?? [],
-    self::$query['fk'] ?? [],
-    self::$query['indexes'] ?? [],
-    self::$query['uniques'] ?? []
-);
-    return implode(",",array_filter($allParts));
+            self::$query["fkDrop"] ?? [],
+            self::$query['datatypes'] ?? [],
+            self::$query['primary'] ?? [],
+            self::$query['fk'] ?? [],
+            self::$query['indexes'] ?? [],
+            self::$query['uniques'] ?? []
+        );
+        return implode(", ", array_filter($allParts));
     }
 
 
     public function build()
-    {   
+    {
         return self::processParams();
     }
 }
