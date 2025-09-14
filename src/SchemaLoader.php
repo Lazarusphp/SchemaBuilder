@@ -36,12 +36,12 @@ class SchemaLoader
                     }
 
                     if ($method === "alter") {
-                        $this->modifyTable($method);
+                        $this->alterTable($method);
                     }
 
-                    if ($method === "down") {
+                    // if ($method === "down") {
                         $this->dropTable($method);
-                    }
+                    // }
                 }
                 else
                 {
@@ -134,7 +134,6 @@ class SchemaLoader
      private function migrateTable($method)
     {
 
-        if ($this->validator->hasTable()) {
             if (method_exists($this->schemaLoaderInterface, $method)) {
 
                 $schema = new Schema();
@@ -143,30 +142,45 @@ class SchemaLoader
                     $this->schemaLoaderInterface->up($schema);
                 } 
                 else {
-                    SchemaErrors::generate("Cannot create table ".TABLE, ["reason" => "$method code has not Body in it"]);
+                    // ::generate("Cannot create table ".TABLE, ["reason" => "$method code has not Body in it"]);
                 }
-            } else {
-                SchemaErrors::generate("Cannot create table ".TABLE, ["reason" => "Method $method does not exist"]);
-            }
         }
     }
     
     // Set ALter table
-        private function modifyTable($method)
+        private function alterTable($method)
     {
-        // echo We Will Drop the table
-        // if ($this->validator->hasTable($this->table)) {
+        $schema = new Schema();
+        if ($this->validator->hasTable(TABLE)) {
+            if (method_exists($this->schemaLoaderInterface, $method)) {
+
+                if ($this->hasbody($this->schemaLoaderInterface, $method)) {
+                    $this->schemaLoaderInterface->alter($schema);
+                } 
+        
+            } else {
+                // SchemaErrors::generate("Cannot Alter table TABLE", ["reason" => "Method $method does not exist"]);
+            }
+        } else {
+            // SchemaErrors::generate("Cannot Alter table TABLE", ["reason" => "Table TABLE is reqired"]);
+        }
+    }
+
+        private function dropTable($method)
+    {
+        // $schema = new Schema();
+        // if ($this->validator->hasTable(TABLE)) {
         //     if (method_exists($this->schemaLoaderInterface, $method)) {
 
         //         if ($this->hasbody($this->schemaLoaderInterface, $method)) {
-        //             $this->schemaLoaderInterface->alter($this->table);
+        //             $this->schemaLoaderInterface->down($schema);
         //         } 
         
         //     } else {
-        //         SchemaErrors::generate("Cannot Alter table $this->table", ["reason" => "Method $method does not exist"]);
+        //         SchemaErrors::generate("Cannot Alter table TABLE", ["reason" => "Method $method does not exist"]);
         //     }
         // } else {
-        //     SchemaErrors::generate("Cannot Alter table $this->table", ["reason" => "Table $this->table is reqired"]);
+        //     SchemaErrors::generate("Cannot Alter table TABLE", ["reason" => "Table TABLE is reqired"]);
         // }
     }
 
