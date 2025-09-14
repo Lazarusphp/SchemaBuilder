@@ -5,6 +5,7 @@ interface SchemaLoaderInterface
 {
 
     public function up($schema):void;
-    public function down():void;
+    public function alter($schema):void;
+    public function down($schema):void;
 
 }
