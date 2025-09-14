@@ -13,37 +13,30 @@ class Schema extends DbQueries
     public function create(callable $blueprint)
     {
         $validator = new SchemaValidator();
-        if($validator->hasTable(TABLE) === false){
         $sql = "CREATE TABLE IF NOT EXISTS ".TABLE." (";
     if (is_callable($blueprint)) {
             $class = new Blueprint("create");
             $blueprint($class);
-             $sql .= $class->build();
+            $sql .= $class->build();
         }
 
         $sql .= ")";
 
-        echo $sql;
+        // echo $sql;
         $this->save($sql);
-        }
     }
 
-    public function alter(string | callable $blueprint)
+    public function alter(callable $blueprint)
     {
-        $validator = new SchemaValidator();
-        if($validator->hasTable(TABLE) === true)
-        {
+      
         $sql = "ALTER TABLE ".TABLE." ";
         if(is_callable($blueprint))
         {
-            $class = new Blueprint();
+            $class = new Blueprint("alter");
             $blueprint($class);
             $sql .= $class->build();
         }
-
-        echo $sql;
         $this->save($sql);
-        }
     }
 
 
